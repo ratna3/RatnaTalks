@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
 import { Bullet } from './Bullet.js'
+import { HealthSystem } from './HealthSystem.js'
 
 export class Player {
   constructor(scene, world, camera) {
