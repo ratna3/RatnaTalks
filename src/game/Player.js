@@ -147,6 +147,11 @@ export class Player {
   }
 
   updateMovement(deltaTime) {
+    // Check if player is close to ground for better jump detection
+    if (this.body.position.y <= 1.5) {
+      this.isGrounded = true
+    }
+    
     // Get camera direction for movement
     const direction = new THREE.Vector3()
     this.camera.getWorldDirection(direction)
@@ -187,7 +192,7 @@ export class Player {
     if (this.keys.jump && this.isGrounded) {
       this.body.velocity.y = this.jumpForce
       this.isGrounded = false
-      console.log('Player jumped! Velocity Y:', this.body.velocity.y)
+      console.log('Player jumped! Velocity Y:', this.body.velocity.y, 'Position Y:', this.body.position.y)
     }
     
     // Update position from physics body
@@ -211,12 +216,14 @@ export class Player {
     const direction = new THREE.Vector3()
     this.camera.getWorldDirection(direction)
     
-    // Create bullet slightly in front of camera
-    const startPosition = this.camera.position.clone()
-    startPosition.add(direction.clone().multiplyScalar(0.5))
+    // Use gun's muzzle position for bullet spawn
+    const startPosition = this.gun.getBulletSpawnPosition()
     
     const bullet = new Bullet(this.scene, this.world, startPosition, direction)
     this.bullets.push(bullet)
+    
+    // Trigger gun recoil animation
+    this.gun.fireWeapon()
     
     console.log('Shot fired! Ammo remaining:', this.ammo)
   }

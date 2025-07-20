@@ -15,9 +15,10 @@ This is a 3D zombie shooter game built with Three.js for 3D rendering and Cannon
 
 ### ✅ FULLY IMPLEMENTED FEATURES
 - **Player Controller**: Complete FPS controls with WASD movement, mouse look, and jumping
-- **Zombie AI**: Intelligent pathfinding, chasing, attacking, and health system
+- **Zombie AI**: Intelligent pathfinding, chasing, attacking, and health system  
 - **Physics System**: Full Cannon.js integration with collision detection
 - **Shooting Mechanics**: Bullet physics with hit detection and visual effects
+- **Gun System**: 3D gun model with recoil animation and muzzle flash effects
 - **Environment**: 3D urban world with buildings, roads, trees, and collision meshes
 - **Health System**: Player and zombie health management with visual feedback
 - **UI System**: Health bar, crosshair, ammo counter, and game over screen
@@ -25,9 +26,17 @@ This is a 3D zombie shooter game built with Three.js for 3D rendering and Cannon
 ### 🎮 CONFIRMED WORKING CONTROLS
 - `W/A/S/D` - Player movement (IMPLEMENTED & WORKING)
 - `Mouse` - Camera look controls (IMPLEMENTED & WORKING)
-- `Space` - Jump (IMPLEMENTED & WORKING - grounded detection active)
-- `Left Click` - Shoot bullets (IMPLEMENTED & WORKING)
+- `Space` - Jump (IMPLEMENTED & WORKING - improved ground detection)
+- `Left Click` - Shoot bullets (IMPLEMENTED & WORKING - with gun model)
 - `Click to start` - Game initialization (IMPLEMENTED & WORKING)
+
+### 🔫 GUN SYSTEM (FULLY IMPLEMENTED)
+- 3D gun model with barrel, body, trigger, grip, and sights
+- Recoil animation when firing
+- Muzzle flash visual effect
+- Bullet spawn from gun barrel tip
+- Gun follows camera movement
+- Idle animation with subtle sway
 
 ### 🧟 ZOMBIE BEHAVIOR (CONFIRMED ACTIVE)
 - AI pathfinding toward player position
@@ -46,6 +55,7 @@ This is a 3D zombie shooter game built with Three.js for 3D rendering and Cannon
 │   │   ├── Player.js            # Player character logic ✅ WORKING  
 │   │   ├── Zombie.js            # Zombie AI and behavior ✅ WORKING
 │   │   ├── Bullet.js            # Bullet mechanics ✅ WORKING
+│   │   ├── Gun.js               # 3D gun model and effects ✅ WORKING
 │   │   ├── Environment.js       # 3D world environment ✅ WORKING
 │   │   ├── HealthSystem.js      # Health management ✅ WORKING
 │   │   └── CollisionManager.js  # Collision detection ✅ WORKING
@@ -122,13 +132,21 @@ When working on this codebase, remember that ALL core features are already imple
    - ✅ Spawning system with increasing difficulty over time
    - ✅ Unstuck logic for obstacle navigation
 
-3. **Environment**:
+3. **Gun System** (NEW):
+   - ✅ 3D gun model with realistic components (barrel, body, trigger, grip)
+   - ✅ Recoil animation when firing
+   - ✅ Muzzle flash effects
+   - ✅ Bullet spawning from gun barrel tip
+   - ✅ Idle sway animation
+   - ✅ Integration with player shooting system
+
+4. **Environment**:
    - ✅ Detailed 3D terrain with roads, buildings, vegetation
    - ✅ Collision meshes for all interactive objects using Cannon.js
    - ✅ Skybox and atmospheric effects with Three.js shaders
    - ✅ Strategic cover points and obstacles
 
-4. **Combat System**:
+5. **Combat System**:
    - ✅ Bullet physics with realistic trajectories
    - ✅ Hit detection using raycasting and distance calculations
    - ✅ Damage calculation and visual feedback
