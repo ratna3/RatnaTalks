@@ -1,4 +1,3 @@
-import './style.css'
 import { Game } from './game/Game.js'
 
 // Initialize the game when the page loads
