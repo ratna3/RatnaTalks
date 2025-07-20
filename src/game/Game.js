@@ -146,7 +146,8 @@ export class Game {
       // Lock pointer for FPS controls
       document.body.requestPointerLock()
       
-      console.log('Game started!')
+      console.log('Game started! Player position:', this.player.getPosition())
+      console.log('Zombies spawned:', this.zombies.length)
     }
   }
 

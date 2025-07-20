@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
 import { Bullet } from './Bullet.js'
 import { HealthSystem } from './HealthSystem.js'
+import { Gun } from './Gun.js'
 
 export class Player {
   constructor(scene, world, camera) {
@@ -27,6 +28,9 @@ export class Player {
     this.lastDamageTime = 0
     this.damageImmunityTime = 1000 // 1 second immunity after taking damage
     
+    // Create gun
+    this.gun = new Gun(scene, camera)
+    
     this.setupPhysics()
     this.setupControls()
   }
@@ -48,11 +52,13 @@ export class Player {
     // Ground collision detection
     this.body.addEventListener('collide', (event) => {
       const contact = event.contact
-      const other = event.target === this.body ? event.body : event.target
       
-      // Check if collision is with ground (y-normal pointing up)
-      if (contact.ni.y > 0.5 || contact.ni.y < -0.5) {
+      // Check if collision is with ground (y-normal pointing up or down)
+      const normal = contact.ni
+      // If the contact normal has a significant Y component, we're touching ground/ceiling
+      if (Math.abs(normal.y) > 0.7) {
         this.isGrounded = true
+        console.log('Player grounded! Normal Y:', normal.y)
       }
     })
   }
@@ -130,13 +136,14 @@ export class Player {
   }
 
   update(deltaTime) {
+    // Reset grounded state at the beginning of frame
+    this.isGrounded = false
+    
     this.updateMovement(deltaTime)
     this.updateShooting()
     this.updateBullets(deltaTime)
     this.updateCamera()
-    
-    // Reset grounded state (will be set again by collision detection)
-    this.isGrounded = false
+    this.gun.update(deltaTime)
   }
 
   updateMovement(deltaTime) {
@@ -180,6 +187,7 @@ export class Player {
     if (this.keys.jump && this.isGrounded) {
       this.body.velocity.y = this.jumpForce
       this.isGrounded = false
+      console.log('Player jumped! Velocity Y:', this.body.velocity.y)
     }
     
     // Update position from physics body

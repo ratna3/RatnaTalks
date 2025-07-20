@@ -177,6 +177,15 @@ export class Zombie {
     this.body.velocity.x = direction.x * this.speed
     this.body.velocity.z = direction.z * this.speed
     
+    // Debug: Log movement
+    if (Math.random() < 0.01) { // Log occasionally to avoid spam
+      console.log('Zombie moving:', {
+        position: this.group.position,
+        target: targetPosition,
+        velocity: { x: this.body.velocity.x, z: this.body.velocity.z }
+      })
+    }
+    
     // Rotate to face target
     const angle = Math.atan2(direction.x, direction.z)
     this.group.rotation.y = angle
