@@ -1,10 +1,10 @@
-import * as THREE from 'three'
+import * as THREE from 'three';
 
 /**
  * ModelLoader utility for loading 3D models and textures
  * Provides caching and error handling for asset loading
  */
-export class ModelLoader {
+export default class ModelLoader {
   constructor() {
     this.cache = new Map()
     this.textureLoader = new THREE.TextureLoader()

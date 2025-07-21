@@ -1,136 +1,83 @@
-import * as THREE from 'three'
+import * as THREE from 'three';
 
-export class InputManager {
-  constructor(camera, player) {
-    this.camera = camera
-    this.player = player
-    
-    this.mouseMovement = { x: 0, y: 0 }
-    this.mouseSensitivity = 0.002
-    this.isPointerLocked = false
-    
-    this.pitch = 0 // Up/down rotation
-    this.yaw = 0   // Left/right rotation
-    this.maxPitch = Math.PI / 2 - 0.1 // Prevent looking too far up/down
-    
-    this.setupEventListeners()
+/**
+ * InputManager for handling keyboard and mouse input
+ * Implements first-person controls
+ */
+export default class InputManager {
+  constructor() {
+    this.keys = {};
+    this.mouseButtons = {};
+    this.mouseMovement = { x: 0, y: 0 };
+    this.mouseSensitivity = 0.002;
+    this.isPointerLocked = false;
+    this.setupEventListeners();
   }
 
+  /**
+   * Set up event listeners for keyboard and mouse
+   */
   setupEventListeners() {
-    // Pointer lock events
-    document.addEventListener('pointerlockchange', () => this.onPointerLockChange())
-    document.addEventListener('pointerlockerror', () => this.onPointerLockError())
-    
-    // Mouse movement
-    document.addEventListener('mousemove', (event) => this.onMouseMove(event))
-    
-    // Prevent context menu on right click
-    document.addEventListener('contextmenu', (event) => event.preventDefault())
-    
-    // Handle pointer lock request
-    document.addEventListener('click', () => this.requestPointerLock())
+    document.addEventListener('keydown', (event) => this.onKeyDown(event));
+    document.addEventListener('keyup', (event) => this.onKeyUp(event));
+    document.addEventListener('mousedown', (event) => this.onMouseDown(event));
+    document.addEventListener('mouseup', (event) => this.onMouseUp(event));
+    document.addEventListener('mousemove', (event) => this.onMouseMove(event));
+    document.addEventListener('click', () => this.requestPointerLock());
+    document.addEventListener('pointerlockchange', () => this.onPointerLockChange());
+  }
+
+  onKeyDown(event) {
+    this.keys[event.code] = true;
+  }
+
+  onKeyUp(event) {
+    this.keys[event.code] = false;
+  }
+
+  onMouseDown(event) {
+    this.mouseButtons[event.button] = true;
+  }
+
+  onMouseUp(event) {
+    this.mouseButtons[event.button] = false;
+  }
+
+  onMouseMove(event) {
+    if (this.isPointerLocked) {
+      this.mouseMovement.x = event.movementX || 0;
+      this.mouseMovement.y = event.movementY || 0;
+    }
   }
 
   requestPointerLock() {
     if (!this.isPointerLocked) {
-      document.body.requestPointerLock()
+      document.body.requestPointerLock();
     }
   }
 
   onPointerLockChange() {
-    this.isPointerLocked = document.pointerLockElement === document.body
-    
-    if (this.isPointerLocked) {
-      console.log('Pointer locked - FPS controls active')
-    } else {
-      console.log('Pointer unlocked - FPS controls inactive')
-    }
+    this.isPointerLocked = document.pointerLockElement === document.body;
   }
 
-  onPointerLockError() {
-    console.error('Pointer lock error')
+  /**
+   * Update input states - call this in the game loop
+   */
+  update() {
+    // Reset mouse movement after processing
+    this.mouseMovement.x = 0;
+    this.mouseMovement.y = 0;
   }
 
-  onMouseMove(event) {
-    if (!this.isPointerLocked) return
-    
-    // Get mouse movement deltas
-    const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0
-    const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0
-    
-    // Update rotation angles
-    this.yaw -= movementX * this.mouseSensitivity
-    this.pitch -= movementY * this.mouseSensitivity
-    
-    // Clamp pitch to prevent over-rotation
-    this.pitch = Math.max(-this.maxPitch, Math.min(this.maxPitch, this.pitch))
-    
-    // Apply rotation to camera
-    this.updateCameraRotation()
+  isKeyPressed(keyCode) {
+    return !!this.keys[keyCode];
   }
 
-  updateCameraRotation() {
-    // Create rotation quaternion from yaw and pitch
-    const yawQuaternion = new THREE.Quaternion()
-    yawQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw)
-    
-    const pitchQuaternion = new THREE.Quaternion()
-    pitchQuaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), this.pitch)
-    
-    // Combine rotations
-    const combinedQuaternion = new THREE.Quaternion()
-    combinedQuaternion.multiplyQuaternions(yawQuaternion, pitchQuaternion)
-    
-    // Apply to camera
-    this.camera.quaternion.copy(combinedQuaternion)
+  isMouseButtonPressed(button) {
+    return !!this.mouseButtons[button];
   }
 
-  // Get the current look direction
-  getLookDirection() {
-    const direction = new THREE.Vector3(0, 0, -1)
-    direction.applyQuaternion(this.camera.quaternion)
-    return direction
-  }
-
-  // Get the right direction (for strafing)
-  getRightDirection() {
-    const right = new THREE.Vector3(1, 0, 0)
-    right.applyQuaternion(this.camera.quaternion)
-    return right
-  }
-
-  // Get the forward direction (without Y component, for movement)
-  getForwardDirection() {
-    const forward = this.getLookDirection()
-    forward.y = 0
-    forward.normalize()
-    return forward
-  }
-
-  // Check if pointer is locked
-  isPointerLockActive() {
-    return this.isPointerLocked
-  }
-
-  // Set mouse sensitivity
-  setMouseSensitivity(sensitivity) {
-    this.mouseSensitivity = sensitivity
-  }
-
-  // Reset camera rotation
-  resetRotation() {
-    this.pitch = 0
-    this.yaw = 0
-    this.updateCameraRotation()
-  }
-
-  // Get current rotation angles (useful for debugging)
-  getRotationAngles() {
-    return {
-      pitch: this.pitch,
-      yaw: this.yaw,
-      pitchDegrees: this.pitch * (180 / Math.PI),
-      yawDegrees: this.yaw * (180 / Math.PI)
-    }
+  getMouseMovement() {
+    return this.mouseMovement;
   }
 }

@@ -129,11 +129,19 @@ This is a 3D zombie shooter game built with Three.js for 3D rendering and Cannon
 - Log frame rates and memory usage during development
 
 ## Future Enhancement Ideas
-- Multiplayer support with WebRTC or WebSockets
-- Procedural level generation
-- Different weapon types and upgrades
-- Sound effects and background music
-- Save/load game state functionality
-- Mobile device support with touch controls
+Multiplayer support with WebRTC or WebSockets
+Procedural level generation
+Different weapon types and upgrades (shotgun, rifle, sniper, etc.)
+Weapon attachments and customization (scopes, silencers, extended mags)
+Zombie variants (fast, tank, ranged, boss zombies)
+Power-ups (health packs, ammo crates, temporary boosts)
+Score and progression system (kills, combos, unlocks)
+Wave system with increasing difficulty and boss waves
+Randomized/procedural environment and item spawns
+Sound effects and background music
+UI enhancements (minimap, quest tracker, pause/settings menu)
+Performance tools (FPS counter, memory usage, debug helpers)
+Save/load game state functionality
+Mobile device support with touch controls
 
 Remember to maintain clean, readable code and follow these conventions consistently throughout the project.

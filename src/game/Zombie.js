@@ -1,7 +1,47 @@
-import * as THREE from 'three'
-import * as CANNON from 'cannon-es'
+import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 
-export class Zombie {
+/**
+ * Enhanced Zombie class with improved AI, animations, and behavior
+ */
+export default class Zombie {
+  constructor(scene, world, x, y, z) {
+    this.scene = scene
+    this.world = world
+    
+    this.health = 100
+    this.maxHealth = 100
+    this.speed = 3
+    this.attackDamage = 10
+    this.attackRange = 2
+    this.attackCooldown = 1500
+    this.lastAttackTime = 0
+    this.detectionRange = 15
+    this.lostTargetRange = 25
+    
+    this.target = null
+    this.state = 'idle' // idle, chasing, attacking, dead
+    this.lastKnownPlayerPosition = new THREE.Vector3()
+    
+    // AI pathfinding
+    this.pathfindingTimer = 0
+    this.pathfindingInterval = 500
+    this.stuckTimer = 0
+    this.lastPosition = new THREE.Vector3()
+    this.movementThreshold = 0.1
+    
+    // Animation properties
+    this.walkCycle = 0
+    this.armSwing = 0
+    this.isFlashing = false
+    
+    this.setupVisual(x, y, z)
+    this.setupPhysics(x, y, z)
+    this.setupAI()
+  }'three';
+import * as CANNON from 'cannon-es';
+
+export default class Zombie {
   constructor(scene, world, x, y, z) {
     this.scene = scene
     this.world = world
@@ -44,7 +84,7 @@ export class Zombie {
     
     // Eyes (red dots)
     const eyeGeometry = new THREE.SphereGeometry(0.05, 4, 4)
-    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, emissive: 0x440000 })
+    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 })
     
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial)
     leftEye.position.set(-0.1, 1.85, 0.2)

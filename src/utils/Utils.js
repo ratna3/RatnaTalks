@@ -1,82 +1,12 @@
-import * as THREE from 'three'
+import * as THREE from 'three';
 
-export class HealthSystem {
-  constructor(maxHealth = 100) {
-    this.maxHealth = maxHealth
-    this.currentHealth = maxHealth
-    this.lastDamageTime = 0
-    this.damageImmunityDuration = 1000 // 1 second
-    
-    this.onHealthChanged = null // Callback function
-    this.onDeath = null // Callback function
-  }
-
-  takeDamage(amount) {
-    const currentTime = Date.now()
-    
-    // Check for damage immunity
-    if (currentTime - this.lastDamageTime < this.damageImmunityDuration) {
-      return false // Damage was blocked
-    }
-    
-    this.currentHealth -= amount
-    this.currentHealth = Math.max(0, this.currentHealth)
-    this.lastDamageTime = currentTime
-    
-    // Trigger callbacks
-    if (this.onHealthChanged) {
-      this.onHealthChanged(this.currentHealth, this.maxHealth)
-    }
-    
-    if (this.currentHealth <= 0 && this.onDeath) {
-      this.onDeath()
-    }
-    
-    return true // Damage was applied
-  }
-
-  heal(amount) {
-    this.currentHealth += amount
-    this.currentHealth = Math.min(this.maxHealth, this.currentHealth)
-    
-    if (this.onHealthChanged) {
-      this.onHealthChanged(this.currentHealth, this.maxHealth)
-    }
-  }
-
-  reset() {
-    this.currentHealth = this.maxHealth
-    this.lastDamageTime = 0
-    
-    if (this.onHealthChanged) {
-      this.onHealthChanged(this.currentHealth, this.maxHealth)
-    }
-  }
-
-  getHealth() {
-    return this.currentHealth
-  }
-
-  getMaxHealth() {
-    return this.maxHealth
-  }
-
-  getHealthPercentage() {
-    return (this.currentHealth / this.maxHealth) * 100
-  }
-
-  isDead() {
-    return this.currentHealth <= 0
-  }
-
-  isImmune() {
-    const currentTime = Date.now()
-    return (currentTime - this.lastDamageTime) < this.damageImmunityDuration
-  }
-}
+/**
+ * Utility functions for the game
+ * Provides common mathematical and helper functions
+ */
 
 // Utility functions
-export class Utils {
+export default class Utils {
   // Linear interpolation
   static lerp(start, end, factor) {
     return start + (end - start) * factor

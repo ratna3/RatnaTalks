@@ -1,7 +1,7 @@
-import * as THREE from 'three'
-import * as CANNON from 'cannon-es'
+import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 
-export class Environment {
+export default class Environment {
   constructor(scene, world) {
     this.scene = scene
     this.world = world
@@ -129,8 +129,7 @@ export class Environment {
 
   addWindows(building, width, height, depth) {
     const windowMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0x6666ff,
-      emissive: 0x111133 
+      color: 0x6666ff
     })
     
     // Front and back windows

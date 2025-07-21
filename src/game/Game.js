@@ -1,12 +1,14 @@
-import * as THREE from 'three'
-import * as CANNON from 'cannon-es'
-import { Player } from './Player.js'
-import { Zombie } from './Zombie.js'
-import { Environment } from './Environment.js'
-import { CollisionManager } from './CollisionManager.js'
-import { InputManager } from '../utils/InputManager.js'
+import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
+import Player from './Player.js';
+import Zombie from './Zombie.js';
+import Environment from './Environment.js';
+import Bullet from './Bullet.js';
+import HealthSystem from './HealthSystem.js';
+import CollisionManager from './CollisionManager.js';
+import InputManager from '../utils/InputManager.js';
 
-export class Game {
+export default class Game {
   constructor() {
     this.scene = null
     this.camera = null
@@ -34,6 +36,7 @@ export class Game {
     this.setupLights()
     this.setupEntities()
     this.setupEventListeners()
+    this.startGame()
     this.animate()
   }
 
@@ -105,11 +108,11 @@ export class Game {
     // Create environment
     this.environment = new Environment(this.scene, this.world)
     
-    // Create player
-    this.player = new Player(this.scene, this.world, this.camera)
-    
     // Create input manager
-    this.inputManager = new InputManager(this.camera, this.player)
+    this.inputManager = new InputManager()
+    
+    // Create player
+    this.player = new Player(this.scene, this.world, this.camera, this.inputManager)
     
     // Spawn initial zombies
     this.spawnZombies(3)
@@ -141,10 +144,13 @@ export class Game {
     if (!this.isGameStarted) {
       this.isGameStarted = true
       this.gameRunning = true
-      document.getElementById('instructions').classList.add('hidden')
       
-      // Lock pointer for FPS controls
-      document.body.requestPointerLock()
+      const instructions = document.getElementById('instructions')
+      if (instructions) {
+        instructions.classList.add('hidden')
+      }
+      
+      // Lock pointer for FPS controls (will be handled by InputManager)
       
       console.log('Game started!')
     }
@@ -158,6 +164,9 @@ export class Game {
 
   update(deltaTime) {
     if (!this.gameRunning) return
+
+    // Update input manager
+    this.inputManager.update()
 
     // Update physics world
     this.world.fixedStep()

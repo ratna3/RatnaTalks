@@ -1,190 +1,162 @@
-import * as THREE from 'three'
-import * as CANNON from 'cannon-es'
+import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 
-export class Bullet {
-  constructor(scene, world, position, direction) {
-    this.scene = scene
-    this.world = world
-    this.speed = 50
-    this.lifeTime = 3000 // 3 seconds
-    this.createTime = Date.now()
-    
-    this.setupVisual(position)
-    this.setupPhysics(position, direction)
+/**
+ * Bullet class for projectile mechanics
+ * Implements object pooling and disposal
+ */
+export default class Bullet {
+  /**
+   * @param {THREE.Scene} scene
+   * @param {CANNON.World} physicsWorld
+   * @param {THREE.Vector3} position
+   * @param {THREE.Vector3} direction
+   */
+  constructor(scene, physicsWorld, position, direction) {
+    this.scene = scene;
+    this.physicsWorld = physicsWorld;
+    this.position = position.clone();
+    this.direction = direction.clone();
+    this.speed = 50;
+    this.lifeTime = 3000; // ms
+    this.createTime = Date.now();
+    this.shouldBeRemoved = false;
+    this.init();
   }
 
-  setupVisual(position) {
-    // Create bullet geometry (small sphere)
-    const geometry = new THREE.SphereGeometry(0.05, 8, 8)
-    const material = new THREE.MeshBasicMaterial({ 
+  /**
+   * Initialize bullet mesh and physics body
+   */
+  init() {
+    // Three.js mesh - Enhanced bullet appearance
+    const geometry = new THREE.SphereGeometry(0.05, 8, 8);
+    const material = new THREE.MeshStandardMaterial({ 
       color: 0xffff00,
-      emissive: 0x444400 
-    })
-    
-    this.mesh = new THREE.Mesh(geometry, material)
-    this.mesh.position.copy(position)
-    this.scene.add(this.mesh)
-    
-    // Add trail effect
-    this.trail = []
-    this.maxTrailLength = 10
-  }
+      emissive: 0x444400,
+      metalness: 0.5,
+      roughness: 0.1
+    });
+    this.mesh = new THREE.Mesh(geometry, material);
+    this.mesh.position.copy(this.position);
+    this.mesh.castShadow = true;
+    this.scene.add(this.mesh);
 
-  setupPhysics(position, direction) {
-    // Create physics body
-    const shape = new CANNON.Sphere(0.05)
-    this.body = new CANNON.Body({ mass: 0.01 })
-    this.body.addShape(shape)
-    this.body.position.copy(position)
-    
-    // Set velocity in shooting direction
-    const velocity = direction.clone().multiplyScalar(this.speed)
-    this.body.velocity.set(velocity.x, velocity.y, velocity.z)
-    
-    // Add to physics world
-    this.world.addBody(this.body)
-    
-    // Handle collisions
+    // Add bullet trail effect
+    this.createTrailEffect();
+
+    // Cannon.js body
+    const shape = new CANNON.Sphere(0.05);
+    this.body = new CANNON.Body({ mass: 0.01 });
+    this.body.addShape(shape);
+    this.body.position.copy(this.position);
+    const velocity = new CANNON.Vec3(
+      this.direction.x * this.speed,
+      this.direction.y * this.speed,
+      this.direction.z * this.speed
+    );
+    this.body.velocity.copy(velocity);
+    this.physicsWorld.addBody(this.body);
     this.body.addEventListener('collide', (event) => {
-      this.onCollision(event)
-    })
+      this.createImpactEffect(event);
+      this.shouldBeRemoved = true;
+    });
   }
 
-  onCollision(event) {
-    const other = event.target === this.body ? event.body : event.target
+  /**
+   * Create bullet trail effect
+   */
+  createTrailEffect() {
+    const trailGeometry = new THREE.BufferGeometry();
+    const trailMaterial = new THREE.LineBasicMaterial({ 
+      color: 0xffff00,
+      transparent: true,
+      opacity: 0.5
+    });
     
-    // Create impact effect
-    this.createImpactEffect()
+    const positions = new Float32Array(6); // 2 points, 3 coordinates each
+    trailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     
-    // Mark for removal
-    this.shouldBeRemoved = true
+    this.trail = new THREE.Line(trailGeometry, trailMaterial);
+    this.scene.add(this.trail);
   }
 
-  createImpactEffect() {
-    // Create small particle explosion
-    const particleCount = 5
-    const particles = new THREE.Group()
+  /**
+   * Create impact effect when bullet hits something
+   */
+  createImpactEffect(collisionEvent) {
+    const impactPosition = this.body.position;
+    
+    // Create particle effect
+    const particleCount = 10;
+    const particles = new THREE.Group();
     
     for (let i = 0; i < particleCount; i++) {
-      const particleGeometry = new THREE.SphereGeometry(0.02, 4, 4)
+      const particleGeometry = new THREE.SphereGeometry(0.01, 4, 4);
       const particleMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xffa500,
+        color: 0xff4444,
         transparent: true,
         opacity: 0.8
-      })
+      });
+      const particle = new THREE.Mesh(particleGeometry, particleMaterial);
       
-      const particle = new THREE.Mesh(particleGeometry, particleMaterial)
-      particle.position.copy(this.mesh.position)
+      particle.position.copy(impactPosition);
+      particles.add(particle);
       
       // Random velocity for particles
       const velocity = new THREE.Vector3(
         (Math.random() - 0.5) * 2,
         (Math.random() - 0.5) * 2,
         (Math.random() - 0.5) * 2
-      )
-      velocity.normalize()
-      velocity.multiplyScalar(Math.random() * 2)
-      
-      particle.userData = { velocity, life: 0.5 }
-      particles.add(particle)
+      );
+      particle.userData.velocity = velocity;
     }
     
-    this.scene.add(particles)
+    this.scene.add(particles);
     
-    // Animate particles
-    const animateParticles = () => {
-      let allDead = true
-      
-      particles.children.forEach(particle => {
-        if (particle.userData.life > 0) {
-          particle.position.add(particle.userData.velocity.clone().multiplyScalar(0.016))
-          particle.userData.velocity.y -= 0.5 // gravity
-          particle.userData.life -= 0.016
-          particle.material.opacity = particle.userData.life * 2
-          allDead = false
-        }
-      })
-      
-      if (!allDead) {
-        requestAnimationFrame(animateParticles)
-      } else {
-        this.scene.remove(particles)
-        // Dispose of materials and geometries
-        particles.children.forEach(particle => {
-          particle.geometry.dispose()
-          particle.material.dispose()
-        })
-      }
-    }
-    
-    animateParticles()
+    // Remove particles after short time
+    setTimeout(() => {
+      this.scene.remove(particles);
+    }, 500);
   }
 
-  update(deltaTime) {
-    // Update visual position from physics
-    this.mesh.position.copy(this.body.position)
+  /**
+   * Update bullet position and check for removal
+   */
+  update() {
+    this.mesh.position.copy(this.body.position);
     
-    // Update trail
-    this.updateTrail()
-  }
-
-  updateTrail() {
-    // Add current position to trail
-    this.trail.push(this.mesh.position.clone())
-    
-    // Limit trail length
-    if (this.trail.length > this.maxTrailLength) {
-      this.trail.shift()
+    // Update trail effect
+    if (this.trail) {
+      const positions = this.trail.geometry.attributes.position.array;
+      positions[0] = this.body.position.x - this.direction.x * 0.5;
+      positions[1] = this.body.position.y - this.direction.y * 0.5;
+      positions[2] = this.body.position.z - this.direction.z * 0.5;
+      positions[3] = this.body.position.x;
+      positions[4] = this.body.position.y;
+      positions[5] = this.body.position.z;
+      this.trail.geometry.attributes.position.needsUpdate = true;
     }
     
-    // Optional: Create visual trail (commented out for performance)
-    /*
-    if (this.trailMesh) {
-      this.scene.remove(this.trailMesh)
+    if (Date.now() - this.createTime > this.lifeTime || this.shouldBeRemoved) {
+      this.dispose();
     }
-    
-    if (this.trail.length > 1) {
-      const trailGeometry = new THREE.BufferGeometry().setFromPoints(this.trail)
-      const trailMaterial = new THREE.LineBasicMaterial({ 
-        color: 0xffff00,
-        transparent: true,
-        opacity: 0.5
-      })
-      this.trailMesh = new THREE.Line(trailGeometry, trailMaterial)
-      this.scene.add(this.trailMesh)
-    }
-    */
   }
 
-  checkCollision(targetMesh) {
-    // Simple distance-based collision check
-    const distance = this.mesh.position.distanceTo(targetMesh.position)
-    return distance < 1.0 // Collision radius
-  }
-
-  shouldRemove() {
-    const currentTime = Date.now()
-    return this.shouldBeRemoved || 
-           (currentTime - this.createTime) > this.lifeTime ||
-           this.body.position.y < -10 // Fell through world
-  }
-
-  removeFromScene() {
-    // Remove from scene
-    this.scene.remove(this.mesh)
+  /**
+   * Dispose of mesh and physics body
+   */
+  dispose() {
+    this.scene.remove(this.mesh);
+    this.mesh.geometry.dispose();
+    this.mesh.material.dispose();
     
-    // Remove trail if it exists
-    if (this.trailMesh) {
-      this.scene.remove(this.trailMesh)
-      this.trailMesh.geometry.dispose()
-      this.trailMesh.material.dispose()
+    if (this.trail) {
+      this.scene.remove(this.trail);
+      this.trail.geometry.dispose();
+      this.trail.material.dispose();
     }
     
-    // Remove from physics world
-    this.world.removeBody(this.body)
-    
-    // Dispose of resources
-    this.mesh.geometry.dispose()
-    this.mesh.material.dispose()
+    this.physicsWorld.removeBody(this.body);
+    this.shouldBeRemoved = true;
   }
 }
