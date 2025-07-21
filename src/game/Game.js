@@ -26,6 +26,14 @@ export default class Game {
     this.zombieSpawnInterval = 3000 // 3 seconds
     this.maxZombies = 10
     this.gameRunning = false
+    
+    // Game stats
+    this.score = 0
+    this.killCount = 0
+    this.currentWave = 1
+    this.zombiesThisWave = 0
+    this.zombiesKilledThisWave = 0
+    this.zombiesPerWave = 5
   }
 
   init() {
@@ -182,20 +190,15 @@ export default class Game {
       if (zombie.isDead()) {
         zombie.removeFromScene()
         this.zombies.splice(index, 1)
+        this.killCount++
+        this.zombiesKilledThisWave++
+        this.score += 100
+        console.log(`Zombie killed! Total kills: ${this.killCount}, Score: ${this.score}`)
       }
     })
 
-    // Handle zombie spawning
-    this.zombieSpawnTimer += deltaTime * 1000
-    if (this.zombieSpawnTimer >= this.zombieSpawnInterval) {
-      this.spawnZombies(1)
-      this.zombieSpawnTimer = 0
-      
-      // Increase difficulty over time
-      if (this.zombieSpawnInterval > 1000) {
-        this.zombieSpawnInterval -= 50
-      }
-    }
+    // Handle zombie spawning and wave management
+    this.handleWaveSystem(deltaTime)
 
     // Update collision detection
     this.collisionManager.update()
@@ -210,6 +213,40 @@ export default class Game {
     this.updateUI()
   }
 
+  handleWaveSystem(deltaTime) {
+    // Check if wave is complete
+    if (this.zombiesThisWave >= this.zombiesPerWave && this.zombies.length === 0) {
+      this.startNextWave()
+      return
+    }
+
+    // Handle zombie spawning
+    this.zombieSpawnTimer += deltaTime * 1000
+    if (this.zombieSpawnTimer >= this.zombieSpawnInterval && 
+        this.zombiesThisWave < this.zombiesPerWave && 
+        this.zombies.length < this.maxZombies) {
+      
+      this.spawnZombies(1)
+      this.zombiesThisWave++
+      this.zombieSpawnTimer = 0
+    }
+  }
+
+  startNextWave() {
+    this.currentWave++
+    this.zombiesThisWave = 0
+    this.zombiesKilledThisWave = 0
+    this.zombiesPerWave += 2 // Increase difficulty
+    this.maxZombies = Math.min(15, this.maxZombies + 1) // Cap at 15 zombies
+    
+    // Decrease spawn interval (faster spawning)
+    if (this.zombieSpawnInterval > 1000) {
+      this.zombieSpawnInterval -= 100
+    }
+    
+    console.log(`Wave ${this.currentWave} started! ${this.zombiesPerWave} zombies incoming!`)
+  }
+
   handleBulletCollisions() {
     const bullets = this.player.getBullets()
     
@@ -217,13 +254,17 @@ export default class Game {
       this.zombies.forEach((zombie, zombieIndex) => {
         if (bullet.checkCollision(zombie.getMesh())) {
           // Damage zombie
-          zombie.takeDamage(25)
+          const damaged = zombie.takeDamage(25)
           
           // Remove bullet
           bullet.removeFromScene()
           bullets.splice(bulletIndex, 1)
           
-          console.log('Zombie hit!')
+          if (damaged) {
+            console.log('Zombie hit!')
+            // Add hit score
+            this.score += 10
+          }
         }
       })
     })
@@ -247,13 +288,35 @@ export default class Game {
     const healthFill = document.getElementById('healthFill')
     const healthText = document.getElementById('healthText')
     
-    healthFill.style.width = `${health}%`
-    healthText.textContent = `Health: ${health}`
+    if (healthFill && healthText) {
+      healthFill.style.width = `${health}%`
+      healthText.textContent = `Health: ${health}`
+    }
     
     // Update ammo counter
     const ammo = this.player.getAmmo()
     const ammoCounter = document.getElementById('ammoCounter')
-    ammoCounter.textContent = `Ammo: ${ammo}`
+    if (ammoCounter) {
+      ammoCounter.textContent = `Ammo: ${ammo}`
+    }
+    
+    // Update zombie counter
+    const zombieCounter = document.getElementById('zombieCounter')
+    if (zombieCounter) {
+      zombieCounter.textContent = `Zombies: ${this.zombies.length}`
+    }
+    
+    // Update score counter
+    const scoreCounter = document.getElementById('scoreCounter')
+    if (scoreCounter) {
+      scoreCounter.textContent = `Score: ${this.score}`
+    }
+    
+    // Update wave counter
+    const waveCounter = document.getElementById('waveCounter')
+    if (waveCounter) {
+      waveCounter.textContent = `Wave: ${this.currentWave}`
+    }
     
     // Check game over
     if (health <= 0) {
@@ -267,12 +330,16 @@ export default class Game {
     
     // Show game over screen
     const instructions = document.getElementById('instructions')
-    instructions.innerHTML = `
-      <h2>Game Over!</h2>
-      <p>You survived and eliminated ${this.getKillCount()} zombies!</p>
-      <p>Click to restart</p>
-    `
-    instructions.classList.remove('hidden')
+    if (instructions) {
+      instructions.innerHTML = `
+        <h2>Game Over!</h2>
+        <p>Final Score: ${this.score}</p>
+        <p>Zombies Killed: ${this.killCount}</p>
+        <p>Waves Survived: ${this.currentWave}</p>
+        <p>Click to restart</p>
+      `
+      instructions.classList.remove('hidden')
+    }
     
     // Reset game on click
     document.addEventListener('click', () => this.restartGame(), { once: true })
@@ -286,18 +353,22 @@ export default class Game {
     this.zombies.forEach(zombie => zombie.removeFromScene())
     this.zombies = []
     
+    // Reset game stats
+    this.score = 0
+    this.killCount = 0
+    this.currentWave = 1
+    this.zombiesThisWave = 0
+    this.zombiesKilledThisWave = 0
+    this.zombiesPerWave = 5
+    
     // Reset timers
     this.zombieSpawnTimer = 0
     this.zombieSpawnInterval = 3000
+    this.maxZombies = 10
     
     // Restart game
     this.startGame()
     this.spawnZombies(3)
-  }
-
-  getKillCount() {
-    // This would be tracked in a real implementation
-    return Math.max(0, 10 - this.zombies.length)
   }
 
   animate() {

@@ -169,7 +169,50 @@ export default class Player {
     const bullet = new Bullet(this.scene, this.physicsWorld, startPosition, direction);
     this.bullets.push(bullet);
     
+    // Add muzzle flash effect
+    this.createMuzzleFlash(startPosition, direction);
+    
+    // Screen shake effect
+    this.addScreenShake();
+    
     console.log('Shot fired! Ammo remaining:', this.ammo);
+  }
+
+  createMuzzleFlash(position, direction) {
+    // Create temporary muzzle flash
+    const flashGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+    const flashMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xffff00,
+      transparent: true,
+      opacity: 0.8
+    });
+    
+    const muzzleFlash = new THREE.Mesh(flashGeometry, flashMaterial);
+    muzzleFlash.position.copy(position);
+    muzzleFlash.position.add(direction.clone().multiplyScalar(0.3));
+    this.scene.add(muzzleFlash);
+    
+    // Remove muzzle flash after short duration
+    setTimeout(() => {
+      this.scene.remove(muzzleFlash);
+      flashGeometry.dispose();
+      flashMaterial.dispose();
+    }, 100);
+  }
+
+  addScreenShake() {
+    // Simple screen shake by slightly rotating camera
+    const originalRotation = this.camera.rotation.clone();
+    const shakeIntensity = 0.01;
+    
+    this.camera.rotation.x += (Math.random() - 0.5) * shakeIntensity;
+    this.camera.rotation.y += (Math.random() - 0.5) * shakeIntensity;
+    this.camera.rotation.z += (Math.random() - 0.5) * shakeIntensity;
+    
+    // Restore original rotation after brief moment
+    setTimeout(() => {
+      this.camera.rotation.copy(originalRotation);
+    }, 50);
   }
 
   updateBullets(deltaTime) {
